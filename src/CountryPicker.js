@@ -323,10 +323,8 @@ export default class CountryPicker extends Component {
   }
 
   handleFilterChange = value => {
-    let filteredCountries =
-      value === '' ? this.state.cca2List : this.fuse.search(value)
-
-    filteredCountries = filteredCountries.map(c => c.item);
+    const filteredCountries =
+      value === '' ? this.state.cca2List : this.fuse.search(value).map(c => c.item)
 
     this._listView.scrollTo({ y: 0 })
 
