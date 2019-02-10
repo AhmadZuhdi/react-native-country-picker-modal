@@ -251,12 +251,25 @@ export default class CountryPicker extends Component {
   getLetters(list) {
     return Object.keys(
       list.reduce(
-        (acc, val) => ({
-          ...acc,
-          [this.getCountryName(countries[val])
-            .slice(0, 1)
-            .toUpperCase()]: ''
-        }),
+        (acc, val) => {
+          const isObject = (typeof val === 'object')
+          if (isObject) {
+            return {
+              ...acc,
+              [val
+                .label
+                .slice(0, 1)
+                .toUpperCase()]: ''
+            }
+          }
+
+          return {
+            ...acc,
+            [this.getCountryName(countries[val])
+              .slice(0, 1)
+              .toUpperCase()]: ''
+          }
+        },
         {}
       )
     ).sort()
@@ -334,6 +347,7 @@ export default class CountryPicker extends Component {
   }
 
   renderCountryDetail(cca2) {
+    console.log('CountryPicker', cca2)
     const isObject = (typeof cca2 === 'object')
     const cca2Value = isObject ? cca2.cca2 : cca2
     const country = countries[cca2Value]
@@ -437,9 +451,9 @@ export default class CountryPicker extends Component {
                     keyboardShouldPersistTaps="always"
                   >
                     {this.state.filter === '' &&
-                      this.state.letters.map((letter, index) =>
-                        this.renderLetters(letter, index)
-                      )}
+                    this.state.letters.map((letter, index) =>
+                      this.renderLetters(letter, index)
+                    )}
                   </ScrollView>
                 )}
               </View>
