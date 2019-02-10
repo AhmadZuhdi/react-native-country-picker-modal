@@ -133,7 +133,14 @@ export default class CountryPicker extends Component {
     const excludeCountries = [...props.excludeCountries]
 
     excludeCountries.forEach(excludeCountry => {
-      const index = countryList.indexOf(excludeCountry)
+      const index = countryList.findIndex(c => {
+        const isObject = (typeof c === 'object')
+        if (isObject) {
+          return (c.cca2 === excludeCountry)
+        }
+
+        return (c === excludeCountry)
+      });
 
       if (index !== -1) {
         countryList.splice(index, 1)
@@ -142,7 +149,7 @@ export default class CountryPicker extends Component {
 
     // Sort country list
     countryList = countryList
-      .map(c => [c, this.getCountryName(countries[c])])
+      .map(c => [c, (typeof c === 'object') ? c.label : this.getCountryName(countries[c])])
       .sort((a, b) => {
         if (a[1] < b[1]) return -1
         if (a[1] > b[1]) return 1
@@ -182,10 +189,15 @@ export default class CountryPicker extends Component {
     }, this.props.filterOptions);
     this.fuse = new Fuse(
       countryList.reduce(
-        (acc, item) => [
-          ...acc,
-          { id: item, name: this.getCountryName(countries[item]) }
-        ],
+        (acc, item) => {
+          const isObject = (typeof item === 'object')
+          const cca2Value = isObject ? item.cca2 : item
+          const name = isObject ? item.label : this.getCountryName(countries[cca2Value])
+          return [
+            ...acc,
+            { id: item, name }
+          ]
+        },
         []
       ),
       options
@@ -322,13 +334,15 @@ export default class CountryPicker extends Component {
   }
 
   renderCountryDetail(cca2) {
-    const country = countries[cca2]
+    const isObject = (typeof cca2 === 'object')
+    const cca2Value = isObject ? cca2.cca2 : cca2
+    const country = countries[cca2Value]
     return (
       <View style={styles.itemCountry}>
         {CountryPicker.renderFlag(cca2)}
         <View style={styles.itemCountryName}>
           <Text style={styles.countryName} allowFontScaling={false}>
-            {this.getCountryName(country)}
+            {isObject ? cca2.label : this.getCountryName(country)}
             {this.props.showCallingCode &&
             country.callingCode &&
             <Text>{` (+${country.callingCode})`}</Text>}
