@@ -106,12 +106,20 @@ export default class CountryPicker extends Component {
   }
 
   static renderImageFlag(cca2, imageStyle) {
-    return cca2 !== '' ? (
+    if (!cca2) {
+      return null;
+    }
+
+    const isObject = (typeof cca2 === 'object')
+
+    const cca2Value = isObject ? cca2.cca2 : cca2
+
+    return (
       <Image
         style={[countryPickerStyles.imgStyle, imageStyle]}
-        source={{ uri: countries[cca2].flag }}
+        source={{ uri: countries[cca2Value].flag }}
       />
-    ) : null
+    )
   }
 
   static renderFlag(cca2, itemStyle, emojiStyle, imageStyle) {
@@ -195,7 +203,7 @@ export default class CountryPicker extends Component {
           const name = isObject ? item.label : this.getCountryName(countries[cca2Value])
           return [
             ...acc,
-            { id: item, name }
+            { id: name, name }
           ]
         },
         []
@@ -206,6 +214,31 @@ export default class CountryPicker extends Component {
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.countryList !== this.props.countryList) {
+      const options = Object.assign({
+        shouldSort: true,
+        threshold: 0.6,
+        location: 0,
+        distance: 100,
+        maxPatternLength: 32,
+        minMatchCharLength: 1,
+        keys: ['name'],
+        id: 'id'
+      }, this.props.filterOptions);
+      this.fuse = new Fuse(
+        nextProps.countryList.reduce(
+          (acc, item) => {
+            const isObject = (typeof item === 'object')
+            const cca2Value = isObject ? item.cca2 : item
+            const name = isObject ? item.label : this.getCountryName(countries[cca2Value])
+            return [
+              ...acc,
+              { id: cca2Value, name }
+            ]
+          },
+          []
+        ),
+        options
+      )
       this.setState({
         cca2List: nextProps.countryList,
         dataSource: ds.cloneWithRows(nextProps.countryList)
@@ -347,7 +380,6 @@ export default class CountryPicker extends Component {
   }
 
   renderCountryDetail(cca2) {
-    console.log('CountryPicker', cca2)
     const isObject = (typeof cca2 === 'object')
     const cca2Value = isObject ? cca2.cca2 : cca2
     const country = countries[cca2Value]
