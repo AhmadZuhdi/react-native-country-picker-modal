@@ -185,60 +185,12 @@ export default class CountryPicker extends Component {
       styles = countryPickerStyles
     }
 
-    const options = Object.assign({
-      shouldSort: true,
-      threshold: 0.6,
-      location: 0,
-      distance: 100,
-      maxPatternLength: 32,
-      minMatchCharLength: 1,
-      keys: ['name'],
-      id: 'id'
-    }, this.props.filterOptions);
-    this.fuse = new Fuse(
-      countryList.reduce(
-        (acc, item) => {
-          const isObject = (typeof item === 'object')
-          const cca2Value = isObject ? item.cca2 : item
-          const name = isObject ? item.label : this.getCountryName(countries[cca2Value])
-          return [
-            ...acc,
-            { id: name, name }
-          ]
-        },
-        []
-      ),
-      options
-    )
+    this.buildFuse(countryList)
   }
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.countryList !== this.props.countryList) {
-      const options = Object.assign({
-        shouldSort: true,
-        threshold: 0.6,
-        location: 0,
-        distance: 100,
-        maxPatternLength: 32,
-        minMatchCharLength: 1,
-        keys: ['name'],
-        id: 'id'
-      }, this.props.filterOptions);
-      this.fuse = new Fuse(
-        nextProps.countryList.reduce(
-          (acc, item) => {
-            const isObject = (typeof item === 'object')
-            const cca2Value = isObject ? item.cca2 : item
-            const name = isObject ? item.label : this.getCountryName(countries[cca2Value])
-            return [
-              ...acc,
-              { id: cca2Value, name }
-            ]
-          },
-          []
-        ),
-        options
-      )
+      this.buildFuse(nextProps.countryList)
       this.setState({
         cca2List: nextProps.countryList,
         dataSource: ds.cloneWithRows(nextProps.countryList)
@@ -253,11 +205,14 @@ export default class CountryPicker extends Component {
       dataSource: ds.cloneWithRows(this.state.cca2List)
     })
 
+    const isObject = (typeof cca2 === 'object')
+    const cca2Value = isObject ? cca2.cca2 : cca2
+
     this.props.onChange({
-      cca2,
-      ...countries[cca2],
+      cca2: cca2Value,
+      ...countries[cca2Value],
       flag: undefined,
-      name: this.getCountryName(countries[cca2])
+      name: this.getCountryName(countries[cca2Value])
     })
   }
 
@@ -308,6 +263,34 @@ export default class CountryPicker extends Component {
     ).sort()
   }
 
+  buildFuse(countryList) {
+    const options = Object.assign({
+      shouldSort: true,
+      threshold: 0.6,
+      location: 0,
+      distance: 100,
+      maxPatternLength: 32,
+      minMatchCharLength: 1,
+      keys: ['name'],
+      // id: 'item'
+    }, this.props.filterOptions);
+    this.fuse = new Fuse(
+      countryList.reduce(
+        (acc, item) => {
+          const isObject = (typeof item === 'object')
+          const cca2Value = isObject ? item.cca2 : item
+          const name = isObject ? item.label : this.getCountryName(countries[cca2Value])
+          return [
+            ...acc,
+            { id: cca2Value, name, item }
+          ]
+        },
+        []
+      ),
+      options
+    )
+  }
+
   openModal = this.openModal.bind(this)
 
   // dimensions of country list and window
@@ -340,8 +323,10 @@ export default class CountryPicker extends Component {
   }
 
   handleFilterChange = value => {
-    const filteredCountries =
+    let filteredCountries =
       value === '' ? this.state.cca2List : this.fuse.search(value)
+
+    filteredCountries = filteredCountries.map(c => c.item);
 
     this._listView.scrollTo({ y: 0 })
 
